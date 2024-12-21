@@ -1,9 +1,10 @@
 <?php
 error_reporting(E_ALL);
 
-// Uncomment this block to pass the first stage
-fwrite(STDOUT, "$ ");
+while (true) {
+    fwrite(STDOUT, "$ ");
 
-// Wait for user input
-$input = fgets(STDIN);
-printf("%s: command not found\n", trim($input));
+    $input = fgets(STDIN);
+    $command = trim($input);
+    fwrite(STDOUT, "$command: command not found" . PHP_EOL);
+}
