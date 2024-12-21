@@ -6,6 +6,7 @@ enum Command: string
 {
     case exit = 'exit';
     case echo = 'echo';
+    case type = 'type';
 }
 
 final class CommandNotFoundException extends Exception {
@@ -41,6 +42,7 @@ readonly abstract class AbstractCommand
         return match ($command) {
             Command::exit => new ExitCommand($command, $commandArgs),
             Command::echo => new EchoCommand($command, $commandArgs),
+            Command::type => new TypeCommand($command, $commandArgs),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
@@ -77,6 +79,20 @@ readonly class EchoCommand extends AbstractCommand
     public function execute(): void
     {
         fwrite(STDOUT, $this->content.PHP_EOL);
+    }
+}
+
+readonly class TypeCommand extends AbstractCommand
+{
+    public function execute(): void
+    {
+        $given = $this->args[0];
+        $message = "$given: not found";
+        if (in_array($given, array_map(fn (Command $command): string => $command->value, Command::cases()))) {
+            $message = "$given is a shell builtin";
+        }
+
+        fwrite(STDOUT, $message.PHP_EOL);
     }
 }
 
