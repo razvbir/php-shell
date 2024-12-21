@@ -137,7 +137,7 @@ readonly class ExternalCommand extends AbstractCommand
     {
         $output = [];
         $result_code = 1<<8;
-        $success = exec($this->command, $output, $result_code);
+        $success = exec($this->command.' '.implode(' ', $this->args), $output, $result_code);
         if ($success === false) {
             exit(1);
         }
