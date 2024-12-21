@@ -170,12 +170,16 @@ readonly class ChangeDirectoryCommand extends AbstractCommand
 
     public function execute(): void
     {
-        if (!is_dir($this->directory)) {
-            fwrite(STDOUT, 'cd: '.$this->directory.': No such file or directory'.PHP_EOL);
+        if (str_starts_with($this->directory, '~')) {
+            $actualDirectory = str_replace('~', getenv('HOME'), $this->directory);
+        }
+
+        if (!is_dir($actualDirectory)) {
+            fwrite(STDOUT, 'cd: '.$actualDirectory.': No such file or directory'.PHP_EOL);
             return;
         }
 
-        chdir($this->directory);
+        chdir($actualDirectory);
     }
 }
 
