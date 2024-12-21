@@ -8,6 +8,7 @@ enum Command: string
     case echo = 'echo';
     case type = 'type';
     case pwd = 'pwd';
+    case cd = 'cd';
     case external = 'external';
 }
 
@@ -53,6 +54,7 @@ readonly abstract class AbstractCommand
             Command::type => new TypeCommand(args: $commandArgs),
             Command::external => new ExternalCommand($commandPath, $commandArgs),
             Command::pwd => new PrintWorkingDirectoryCommand(),
+            Command::cd => new ChangeDirectoryCommand(args: $commandArgs),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
@@ -152,6 +154,28 @@ readonly class PrintWorkingDirectoryCommand extends AbstractCommand
     public function execute(): void
     {
         fwrite(STDOUT, getcwd().PHP_EOL);
+    }
+}
+
+readonly class ChangeDirectoryCommand extends AbstractCommand
+{
+    private string $directory;
+
+    public function __construct(
+        protected string $command = '',
+        protected array $args = [],
+    ) {
+        $this->directory = $this->args[0] ?? '';
+    }
+
+    public function execute(): void
+    {
+        if (!is_dir($this->directory)) {
+            fwrite(STDOUT, 'cd: '.$this->directory.': No such file or directory'.PHP_EOL);
+            return;
+        }
+
+        chdir($this->directory);
     }
 }
 
