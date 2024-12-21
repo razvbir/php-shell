@@ -159,27 +159,19 @@ readonly class PrintWorkingDirectoryCommand extends AbstractCommand
 
 readonly class ChangeDirectoryCommand extends AbstractCommand
 {
-    private string $directory;
-
-    public function __construct(
-        protected string $command = '',
-        protected array $args = [],
-    ) {
-        $this->directory = $this->args[0] ?? '';
-    }
-
     public function execute(): void
     {
-        if (str_starts_with($this->directory, '~')) {
-            $actualDirectory = str_replace('~', getenv('HOME'), $this->directory);
+        $directory = $this->args[0];
+        if (str_starts_with($directory, '~')) {
+            $directory = str_replace('~', getenv('HOME'), $directory);
         }
 
-        if (!is_dir($actualDirectory)) {
-            fwrite(STDOUT, 'cd: '.$actualDirectory.': No such file or directory'.PHP_EOL);
+        if (!is_dir($directory)) {
+            fwrite(STDOUT, 'cd: '.$directory.': No such file or directory'.PHP_EOL);
             return;
         }
 
-        chdir($actualDirectory);
+        chdir($directory);
     }
 }
 
