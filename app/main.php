@@ -2,7 +2,7 @@
 declare(strict_types=1);
 error_reporting(E_ALL);
 
-class CommandNotFoundException extends Exception {
+final class CommandNotFoundException extends Exception {
     const INVALID_COMMAND_MESSAGE = ': command not found';
     const INVALID_COMMAND_CODE = 404;
 
@@ -33,6 +33,7 @@ readonly abstract class Command
 
         return match ($commandName) {
             'exit' => new ExitCommand($commandName, $commandArgs),
+            'echo' => new EchoCommand($commandName, $commandArgs),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
@@ -52,6 +53,23 @@ readonly class ExitCommand extends Command
     public function execute(): void
     {
         exit($this->statusCode);
+    }
+}
+
+readonly class EchoCommand extends Command
+{
+    private string $content;
+
+    public function __construct(
+        protected string $commandName,
+        protected array $args = [],
+    ) {
+        $this->content = implode(' ', $this->args);
+    }
+
+    public function execute(): void
+    {
+        fwrite(STDOUT, $this->content.PHP_EOL);
     }
 }
 
