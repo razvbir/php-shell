@@ -88,11 +88,33 @@ readonly class TypeCommand extends AbstractCommand
     {
         $given = $this->args[0];
         $message = "$given: not found";
-        if (in_array($given, array_map(fn (Command $command): string => $command->value, Command::cases()))) {
+        if ($this->isAShellBuiltIn($given)) {
             $message = "$given is a shell builtin";
         }
 
+        $commandPath = $this->tryToGetCommandPath($given);
+        if ($commandPath !== null) {
+            $message = "$given is $commandPath";
+        }
+
         fwrite(STDOUT, $message.PHP_EOL);
+    }
+
+    private function isAShellBuiltIn(string $commandName): bool
+    {
+        return in_array($commandName, array_map(fn (Command $command): string => $command->value, Command::cases()));
+    }
+
+    private function tryToGetCommandPath(string $commandName): ?string
+    {
+        $directories = getenv('PATH');
+        foreach (explode(':', $directories) as $directory) {
+            if (in_array($commandName, array_filter(scandir($directory), fn ($d) => !in_array($d, ['.', '..'])))) {
+                return $directory;
+            }
+        }
+
+        return null;
     }
 }
 
