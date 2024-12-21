@@ -94,7 +94,7 @@ readonly class TypeCommand extends AbstractCommand
 
         $commandPath = $this->tryToGetCommandPath($given);
         if ($commandPath !== null) {
-            $message = "$given is $commandPath";
+            $message = "$given is $commandPath".DIRECTORY_SEPARATOR.$given;
         }
 
         fwrite(STDOUT, $message.PHP_EOL);
@@ -109,8 +109,11 @@ readonly class TypeCommand extends AbstractCommand
     {
         $directories = getenv('PATH');
         foreach (explode(':', $directories) as $directory) {
+            if ($directory === '' || !is_dir($directory)) continue;
+
             $directoryContent = scandir($directory);
             if ($directoryContent === false) continue;
+
             if (in_array($commandName, array_filter($directoryContent, fn ($d) => !in_array($d, ['.', '..'])))) {
                 return $directory;
             }
