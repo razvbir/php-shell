@@ -7,6 +7,7 @@ enum Command: string
     case exit = 'exit';
     case echo = 'echo';
     case type = 'type';
+    case pwd = 'pwd';
     case external = 'external';
 }
 
@@ -51,6 +52,7 @@ readonly abstract class AbstractCommand
             Command::echo => new EchoCommand(args: $commandArgs),
             Command::type => new TypeCommand(args: $commandArgs),
             Command::external => new ExternalCommand($commandPath, $commandArgs),
+            Command::pwd => new PrintWorkingDirectoryCommand(),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
@@ -142,6 +144,14 @@ readonly class ExternalCommand extends AbstractCommand
             exit(1);
         }
         fwrite(STDOUT, implode(PHP_EOL, $output).PHP_EOL);
+    }
+}
+
+readonly class PrintWorkingDirectoryCommand extends AbstractCommand
+{
+    public function execute(): void
+    {
+        fwrite(STDOUT, getcwd().PHP_EOL);
     }
 }
 
