@@ -109,7 +109,9 @@ readonly class TypeCommand extends AbstractCommand
     {
         $directories = getenv('PATH');
         foreach (explode(':', $directories) as $directory) {
-            if (in_array($commandName, array_filter(scandir($directory), fn ($d) => !in_array($d, ['.', '..'])))) {
+            $directoryContent = scandir($directory);
+            if ($directoryContent === false) continue;
+            if (in_array($commandName, array_filter($directoryContent, fn ($d) => !in_array($d, ['.', '..'])))) {
                 return $directory;
             }
         }
