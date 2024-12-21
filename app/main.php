@@ -5,4 +5,5 @@ error_reporting(E_ALL);
 fwrite(STDOUT, "$ ");
 
 // Wait for user input
-fgets(STDIN);
+$input = fgets(STDIN);
+printf("%s: command not found\n", trim($input));
