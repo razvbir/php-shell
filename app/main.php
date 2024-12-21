@@ -90,10 +90,7 @@ readonly class TypeCommand extends AbstractCommand
         $message = "$given: not found";
         if ($this->isAShellBuiltIn($given)) {
             $message = "$given is a shell builtin";
-        }
-
-        $commandPath = $this->tryToGetCommandPath($given);
-        if ($commandPath !== null) {
+        } elseif (($commandPath = $this->tryToGetCommandPath($given)) !== null) {
             $message = "$given is $commandPath".DIRECTORY_SEPARATOR.$given;
         }
 
