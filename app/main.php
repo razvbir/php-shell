@@ -7,6 +7,7 @@ enum Command: string
     case exit = 'exit';
     case echo = 'echo';
     case type = 'type';
+    case external = 'external';
 }
 
 final class CommandNotFoundException extends Exception {
@@ -25,7 +26,7 @@ final class CommandNotFoundException extends Exception {
 readonly abstract class AbstractCommand
 {
     public function __construct(
-        protected Command $commandName,
+        protected string $command = '',
         protected array $args = [],
     ) {
     }
@@ -36,13 +37,20 @@ readonly abstract class AbstractCommand
     {
         $args = explode(" ", trim($command));
         $commandName = $args[0];
-        $command = Command::tryFrom($commandName);
+        $commandPath = TypeCommand::tryToGetCommandPath($commandName);
+        if ($commandPath !== null) {
+            $command = Command::external;
+        } else {
+            $command = Command::tryFrom($commandName);
+        }
+
         $commandArgs = array_slice($args, 1);
 
         return match ($command) {
-            Command::exit => new ExitCommand($command, $commandArgs),
-            Command::echo => new EchoCommand($command, $commandArgs),
-            Command::type => new TypeCommand($command, $commandArgs),
+            Command::exit => new ExitCommand(args: $commandArgs),
+            Command::echo => new EchoCommand(args: $commandArgs),
+            Command::type => new TypeCommand(args: $commandArgs),
+            Command::external => new ExternalCommand($commandPath, $commandArgs),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
@@ -53,7 +61,7 @@ readonly class ExitCommand extends AbstractCommand
     private int $statusCode;
 
     public function __construct(
-        protected Command $commandName,
+        protected string $command = '',
         protected array $args = [],
     ) {
         $this->statusCode = (int) ($this->args[0] ?? 0);
@@ -70,7 +78,7 @@ readonly class EchoCommand extends AbstractCommand
     private string $content;
 
     public function __construct(
-        protected Command $commandName,
+        protected string $command = '',
         protected array $args = [],
     ) {
         $this->content = implode(' ', $this->args);
@@ -90,8 +98,8 @@ readonly class TypeCommand extends AbstractCommand
         $message = "$given: not found";
         if ($this->isAShellBuiltIn($given)) {
             $message = "$given is a shell builtin";
-        } elseif (($commandPath = $this->tryToGetCommandPath($given)) !== null) {
-            $message = "$given is $commandPath".DIRECTORY_SEPARATOR.$given;
+        } elseif (($commandPath = self::tryToGetCommandPath($given)) !== null) {
+            $message = "$given is $commandPath";
         }
 
         fwrite(STDOUT, $message.PHP_EOL);
@@ -102,7 +110,7 @@ readonly class TypeCommand extends AbstractCommand
         return in_array($commandName, array_map(fn (Command $command): string => $command->value, Command::cases()));
     }
 
-    private function tryToGetCommandPath(string $commandName): ?string
+    public static function tryToGetCommandPath(string $commandName): ?string
     {
         $directories = getenv('PATH');
         foreach (explode(':', $directories) as $directory) {
@@ -111,12 +119,29 @@ readonly class TypeCommand extends AbstractCommand
             $directoryContent = scandir($directory);
             if ($directoryContent === false) continue;
 
-            if (in_array($commandName, array_filter($directoryContent, fn ($d) => !in_array($d, ['.', '..'])))) {
-                return $directory;
+            if (
+                in_array($commandName, array_filter($directoryContent, fn ($d) => !in_array($d, ['.', '..']))) &&
+                is_executable($directory.DIRECTORY_SEPARATOR.$commandName)
+            ) {
+                return $directory.DIRECTORY_SEPARATOR.$commandName;
             }
         }
 
         return null;
+    }
+}
+
+readonly class ExternalCommand extends AbstractCommand
+{
+    public function execute(): void
+    {
+        $output = [];
+        $result_code = 1<<8;
+        $success = exec($this->command, $output, $result_code);
+        if ($success === false) {
+            exit(1);
+        }
+        fwrite(STDOUT, implode(PHP_EOL, $output).PHP_EOL);
     }
 }
 
