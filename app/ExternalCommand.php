@@ -8,7 +8,10 @@ readonly class ExternalCommand extends AbstractCommand
     {
         $output = [];
         $result_code = 1<<8;
-        $success = exec($this->command.' '.implode(' ', $this->args), $output, $result_code);
+        $command = escapeshellarg(basename($this->command))
+                . ' '
+                . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), $this->args));
+        $success = exec($command, $output, $result_code);
         if ($success === false) {
             exit(1);
         }

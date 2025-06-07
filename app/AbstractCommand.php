@@ -49,27 +49,38 @@ readonly abstract class AbstractCommand
         $inDouble = false;
         $wasEscaped = false;
         foreach (str_split($command) as $char) {
-            if ($char === '\'' && !$inDouble) {
+            if ($char === '\'' && !$inDouble && !$wasEscaped) {
                 $inSingle = !$inSingle;
                 continue;
             }
 
-            if ($char === '"' && !$inSingle) {
+            if ($char === '"' && !$inSingle && !$wasEscaped) {
                 $inDouble = !$inDouble;
                 continue;
             }
 
-            if ($char === self::DEFAULT_SEPARATOR && !$inSingle && !$inDouble && !$wasEscaped) {
+            if ($char === self::DEFAULT_SEPARATOR && !$inSingle && !$inDouble && !$wasEscaped && strlen($transformed)) {
                 $args[] = $transformed;
                 $transformed = '';
                 continue;
             }
 
-            if ($char === '\\' && !$inSingle && !$inDouble && !$wasEscaped) {
+            if ($char === '\\' && !$inSingle && !$wasEscaped) {
                 $wasEscaped = true;
                 continue;
             }
-            $wasEscaped = false;
+
+            if ($wasEscaped && !in_array($char, ['\\','"', ' '], true) && $inDouble) {
+                $wasEscaped = false;
+                $transformed .= '\\' . $char;
+                continue;
+            }
+
+            if ($wasEscaped) {
+                $wasEscaped = false;
+                $transformed .= $char;
+                continue;
+            }
 
             if (ctype_space($char) && !$inSingle && !$inDouble && !$wasEscaped) {
                 continue;

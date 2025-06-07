@@ -19,23 +19,29 @@ readonly class TypeCommand extends AbstractCommand
 
     private function isAShellBuiltIn(string $commandName): bool
     {
-        return in_array($commandName, array_map(fn (Command $command): string => $command->value, Command::cases()));
+        return in_array(
+            $commandName,
+            array_map(fn (CommandType $command): string => $command->value, CommandType::cases())
+        );
     }
 
     public static function tryToGetCommandPath(string $commandName): ?string
     {
-        $directories = getenv('PATH');
-        foreach (explode(':', $directories) as $directory) {
+        foreach (explode(PATH_SEPARATOR, getenv('PATH')) as $directory) {
             if ($directory === '' || !is_dir($directory)) continue;
 
             $directoryContent = scandir($directory);
             if ($directoryContent === false) continue;
 
+            $path = $directory . DIRECTORY_SEPARATOR . $commandName;
             if (
-                in_array($commandName, array_filter($directoryContent, fn ($d) => !in_array($d, ['.', '..']))) &&
-                is_executable($directory.DIRECTORY_SEPARATOR.$commandName)
+                in_array(
+                    $commandName,
+                    array_filter($directoryContent, fn (string $d): bool => !in_array($d, ['.', '..'], true))
+                ) &&
+                is_executable($path)
             ) {
-                return $directory.DIRECTORY_SEPARATOR.$commandName;
+                return $path;
             }
         }
 
