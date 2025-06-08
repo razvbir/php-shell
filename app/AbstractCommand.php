@@ -66,6 +66,7 @@ readonly abstract class AbstractCommand
             CommandType::external => new ExternalCommand($commandPath, $commandArgs, $out, $err),
             CommandType::pwd => new PrintWorkingDirectoryCommand(out: $out, err: $err),
             CommandType::cd => new ChangeDirectoryCommand(args: $commandArgs, out: $out, err: $err),
+            CommandType::history => new HistoryCommand(args: $commandArgs, out: $out, err: $err),
             default => throw CommandNotFoundException::make($commandName),
         };
     }

@@ -15,6 +15,8 @@ function afterLine(?string $input): void
         exit(0);
     }
 
+    readline_add_history($input);
+
     try {
         AbstractCommand::make($input)->execute();
     } catch (CommandNotFoundException $e) {
