@@ -26,7 +26,12 @@ function afterLine(?string $input): void
 
 function completion(string $command, int $index, int $length): array
 {
-    return array_filter(CommandType::builtIns(), fn (string $b): bool => str_starts_with($b, $command));
+    $completions = array_filter(CommandType::builtIns(), fn (string $b): bool => str_starts_with($b, $command));
+    if ($completions === []) {
+        echo "\x07";
+    }
+
+    return $completions;
 }
 
 readline_callback_handler_install(PROMPT, afterLine(...));
