@@ -29,12 +29,12 @@ readonly abstract class AbstractCommand
             $commandType = CommandType::external;
         }
 
-        $redirectStdout = array_find_key($args, fn (string $a): bool => $a === '>' || $a === '1>');
+        $redirectStdout = array_find_key($args, fn (string $a): bool => in_array($a, ['>', '1>', '>>', '1>>'], true));
         $stdoutFilename = $args[(int) $redirectStdout + 1] ?? null;
 
         $out = STDOUT;
         if ($redirectStdout !== null && $stdoutFilename !== null) {
-            $out = fopen($stdoutFilename, 'w');
+            $out = fopen($stdoutFilename, str_contains($args[$redirectStdout], '>>') === true ? 'a' : 'w');
         }
         if ($out !== STDOUT && !is_resource($out)) {
             throw FileNotFoundException::make();
