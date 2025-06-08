@@ -25,7 +25,8 @@ readonly class TypeCommand extends AbstractCommand
     {
         return in_array(
             $commandName,
-            array_map(fn (CommandType $command): string => $command->value, CommandType::cases())
+            array_map(fn (CommandType $command): string => $command->value, CommandType::cases()),
+            true
         );
     }
 
