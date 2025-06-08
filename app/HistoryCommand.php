@@ -6,10 +6,18 @@ readonly class HistoryCommand extends AbstractCommand
 {
     public function execute(): void
     {
+        // Maybe use getopt
+        $write = isset($this->args[0]) && $this->args[0] === '-w';
+        $filename = $this->args[1] ?? '/dev/null';
+        if ($write === true) {
+            readline_write_history($filename);
+            return;
+        }
+
         $read = isset($this->args[0]) && $this->args[0] === '-r';
         $filename = $this->args[1] ?? '/dev/null';
         if ($read === true) {
-            $this->appendHistoryFile($filename);
+            readline_read_history($filename);
             return;
         }
 
@@ -19,22 +27,5 @@ readonly class HistoryCommand extends AbstractCommand
             $line = sprintf('%5d  %s', $index + 1, $prevCommand);
             fwrite($this->out, $line . PHP_EOL);
         }
-    }
-
-    private function appendHistoryFile(string $filename): void
-    {
-        $file = fopen($filename, 'r');
-        if (false === $file) {
-            exit('Could not open file: ' . $filename . PHP_EOL);
-        }
-
-        while (($line = fgets($file)) !== false) {
-            $trimmed = trim($line);
-            if (strlen($trimmed) > 0) {
-                readline_add_history($trimmed);
-            }
-        }
-
-        fclose($file);
     }
 }
