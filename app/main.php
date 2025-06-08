@@ -21,10 +21,14 @@ function afterLine(?string $input): void
     if (null === $input) {
         global $historyFile;
         readline_callback_handler_remove();
-        if  ($historyFile !== false) {
+        if  ($historyFile !== false && !file_exists($historyFile)) {
             readline_write_history($historyFile);
+            exit(0);
         }
-        exit(0);
+        if ($historyFile !== false && file_exists($historyFile)) {
+            HistoryCommand::appendHistoryFile($historyFile);
+            exit(0);
+        }
     }
     if ('' === $input) {
         readline_callback_handler_install(PROMPT, afterLine(...));

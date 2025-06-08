@@ -10,7 +10,7 @@ readonly class HistoryCommand extends AbstractCommand
         $append = isset($this->args[0]) && $this->args[0] === '-a';
         $filename = $this->args[1] ?? '/dev/null';
         if ($append === true) {
-            $this->appendHistoryFile($filename);
+            static::appendHistoryFile($filename);
             return;
         }
 
@@ -42,7 +42,7 @@ readonly class HistoryCommand extends AbstractCommand
         }
     }
 
-    private function appendHistoryFile(string $filename): void
+    public static function appendHistoryFile(string $filename): void
     {
         $file = fopen($filename, 'r+');
         if (false === $file) {
