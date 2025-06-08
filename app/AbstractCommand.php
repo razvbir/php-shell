@@ -10,6 +10,7 @@ readonly abstract class AbstractCommand
         protected string $command = '',
         /** @var array<string> */
         protected array $args = [],
+        protected mixed $in = STDIN,
         protected mixed $out = STDOUT,
         protected mixed $err = STDERR,
     ) {
@@ -17,10 +18,9 @@ readonly abstract class AbstractCommand
 
     abstract public function execute(): void;
 
-    public static function make(string $command): static
+    /** @param array<string> $args */
+    public static function make(array $args): static
     {
-        $args = self::extract($command);
-
         $commandName = array_shift($args);
 
         $commandPath = TypeCommand::tryToGetCommandPath($commandName);
@@ -63,7 +63,7 @@ readonly abstract class AbstractCommand
             CommandType::exit => new ExitCommand(args: $commandArgs, out: $out, err: $err),
             CommandType::echo => new EchoCommand(args: $commandArgs, out: $out, err: $err),
             CommandType::type => new TypeCommand(args: $commandArgs, out: $out, err: $err),
-            CommandType::external => new ExternalCommand($commandPath, $commandArgs, $out, $err),
+            CommandType::external => new ExternalCommand($commandPath, $commandArgs, STDIN, $out, $err),
             CommandType::pwd => new PrintWorkingDirectoryCommand(out: $out, err: $err),
             CommandType::cd => new ChangeDirectoryCommand(args: $commandArgs, out: $out, err: $err),
             CommandType::history => new HistoryCommand(args: $commandArgs, out: $out, err: $err),
@@ -72,7 +72,7 @@ readonly abstract class AbstractCommand
     }
 
     /** @return array<string> */
-    private static function extract(string $command): array
+    public static function extract(string $command): array
     {
         $args = [];
         $transformed = '';

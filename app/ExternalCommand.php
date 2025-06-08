@@ -7,7 +7,7 @@ readonly class ExternalCommand extends AbstractCommand
     public function execute(): void
     {
         $pipes = [];
-        $descriptorSpec = [STDIN, $this->out, $this->err];
+        $descriptorSpec = [$this->in, $this->out, $this->err];
         $command = escapeshellarg(basename($this->command))
                 . ' '
                 . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), $this->args));

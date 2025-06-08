@@ -15,10 +15,39 @@ function afterLine(?string $input): void
         exit(0);
     }
 
+    $args = AbstractCommand::extract($input);
+    $pipe = array_find_key($args, fn (string $a): bool => $a === '|');
+    if ($pipe !== null) {
+        $one = array_slice($args, 0, $pipe);
+        $two = array_slice($args, $pipe + 1);
+
+        $commandOne = trim(escapeshellarg($one[0])
+                . ' '
+                . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), array_slice($one, 1))));
+
+        $commandTwo = trim(escapeshellarg($two[0])
+                . ' '
+                . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), array_slice($two, 1))));
+
+        $pipesOne = [];
+        $pipesTwo = [];
+        $processOne = proc_open($commandOne, [STDIN, ['pipe', 'w'], ['pipe', 'w']], $pipesOne);
+        $processTwo = proc_open($commandTwo, [$pipesOne[1], STDOUT, STDERR], $pipesTwo);
+
+        while (proc_get_status($processOne)['running'] || proc_get_status($processTwo)['running']);
+
+        proc_close($processOne);
+        proc_close($processTwo);
+
+        readline_add_history($input);
+        readline_callback_handler_install(PROMPT, afterLine(...));
+        return;
+    }
+
     readline_add_history($input);
 
     try {
-        AbstractCommand::make($input)->execute();
+        AbstractCommand::make($args)->execute();
     } catch (CommandNotFoundException $e) {
         fwrite(STDOUT, $e->getMessage() . PHP_EOL);
     }
