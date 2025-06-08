@@ -11,11 +11,6 @@ readonly class HistoryCommand extends AbstractCommand
         $filename = $this->args[1] ?? '/dev/null';
         if ($append === true) {
             $this->appendHistoryFile($filename);
-            // $history = readline_list_history();
-            // readline_clear_history();
-            // readline_read_history($filename);
-            // array_walk($history, fn (string $prompt): true => readline_add_history($prompt));
-            // readline_write_history($filename);
             return;
         }
 
@@ -33,10 +28,16 @@ readonly class HistoryCommand extends AbstractCommand
             return;
         }
 
+        global $history;
+        $localHistory = readline_list_history();
+        if (isset($localHistory[0]) && isset($history[0])) {
+            $localHistory[0] = $history[0];
+        }
+
         $offset = (int) ($this->args[0] ?? 0);
-        $prevCommands = array_slice(readline_list_history(), -$offset, null, true);
+        $prevCommands = array_slice($localHistory, -$offset, null, true);
         foreach ($prevCommands as $index => $prevCommand) {
-            $line = sprintf('%5d  %s', $index + 1, $prevCommand);
+            $line = sprintf('%5d  %s', $index + 1, trim($prevCommand));
             fwrite($this->out, $line . PHP_EOL);
         }
     }
@@ -62,6 +63,9 @@ readonly class HistoryCommand extends AbstractCommand
             exit('Could not rewind the file' . PHP_EOL);
         }
         array_walk($history, function (string $prompt) use($file):void {
+            if (strlen(trim($prompt)) === 0) {
+                return;
+            }
             if (false === fwrite($file, $prompt . PHP_EOL)) {
                 exit('Could not write to file' . PHP_EOL);
             }

@@ -22,6 +22,10 @@ function afterLine(?string $input): void
         readline_callback_handler_remove();
         exit(0);
     }
+    if ('' === $input) {
+        readline_callback_handler_install(PROMPT, afterLine(...));
+        return;
+    }
 
     $args = AbstractCommand::extract($input);
     $pipe = array_find_key($args, fn (string $a): bool => $a === '|');
@@ -98,6 +102,27 @@ function completion(string $command, int $index, int $length): array
 
 readline_callback_handler_install(PROMPT, afterLine(...));
 readline_completion_function(completion(...));
+
+$historyFile = getenv('HISTFILE');
+if (false !== $historyFile) {
+    readline_clear_history();
+    $file = fopen($historyFile, 'r');
+    if (false === $file) {
+        exit('Could not open history file: ' . $historyFile . PHP_EOL);
+    }
+
+    while (($line = fgets($file)) !== false) {
+        $trimmed = trim($line);
+        if (strlen($trimmed) > 0) {
+            if (false === readline_add_history($trimmed)) {
+                exit('Could not add history');
+            };
+        }
+    }
+
+    fclose($file);
+}
+$history = readline_list_history();
 
 $failed = 0;
 $seconds = 0;
