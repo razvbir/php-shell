@@ -6,6 +6,6 @@ readonly class PrintWorkingDirectoryCommand extends AbstractCommand
 {
     public function execute(): void
     {
-        fwrite(STDOUT, getcwd() . PHP_EOL);
+        fwrite($this->out, getcwd() . PHP_EOL);
     }
 }

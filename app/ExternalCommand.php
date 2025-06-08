@@ -15,6 +15,6 @@ readonly class ExternalCommand extends AbstractCommand
         if ($success === false) {
             exit(1);
         }
-        fwrite(STDOUT, implode(PHP_EOL, $output).PHP_EOL);
+        fwrite($this->out, implode(PHP_EOL, $output) . PHP_EOL);
     }
 }

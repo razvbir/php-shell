@@ -6,7 +6,11 @@ readonly class TypeCommand extends AbstractCommand
 {
     public function execute(): void
     {
-        $given = $this->args[0];
+        $given = $this->args[0] ?? '';
+        if ($given === '') {
+            return;
+        }
+
         $message = "$given: not found";
         if ($this->isAShellBuiltIn($given)) {
             $message = "$given is a shell builtin";
@@ -14,7 +18,7 @@ readonly class TypeCommand extends AbstractCommand
             $message = "$given is $commandPath";
         }
 
-        fwrite(STDOUT, $message.PHP_EOL);
+        fwrite($this->out, $message . PHP_EOL);
     }
 
     private function isAShellBuiltIn(string $commandName): bool
