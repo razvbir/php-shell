@@ -26,15 +26,7 @@ function afterLine(?string $input): void
 
 function completion(string $command, int $index, int $length): array
 {
-    $result = [];
-    if (str_starts_with('echo', $command)) {
-        $result[] = 'echo';
-    }
-    if (str_starts_with('exit', $command)) {
-        $result[] = 'exit';
-    }
-
-    return $result;
+    return array_filter(CommandType::builtIns(), fn (string $b): bool => str_starts_with($b, $command));
 }
 
 readline_callback_handler_install(PROMPT, afterLine(...));
