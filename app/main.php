@@ -27,6 +27,7 @@ function afterLine(?string $input): void
 function completion(string $command, int $index, int $length): array
 {
     $completions = array_filter(CommandType::builtIns(), fn (string $b): bool => str_starts_with($b, $command));
+    array_push($completions, ...TypeCommand::getPartialPathMatch($command));
     if ($completions === []) {
         echo "\x07";
     }

@@ -52,4 +52,30 @@ readonly class TypeCommand extends AbstractCommand
 
         return null;
     }
+
+    public static function getPartialPathMatch(string $partialCommand): array
+    {
+        $result = [];
+        foreach (explode(PATH_SEPARATOR, getenv('PATH')) as $directory) {
+            if ($directory === '' || !is_dir($directory)) continue;
+
+            $directoryContent = scandir($directory);
+            if ($directoryContent === false) continue;
+
+            $prefix = $directory . DIRECTORY_SEPARATOR;
+            $executables = array_filter(
+                $directoryContent,
+                function (string $file) use ($prefix, $partialCommand): bool {
+                    return !in_array($file, ['.', '..'], true) &&
+                        is_executable($prefix . $file) &&
+                        str_starts_with($file, $partialCommand);
+                }
+            );
+            if ($executables !== []) {
+                array_push($result, ...$executables);
+            }
+        }
+
+        return $result;
+    }
 }
