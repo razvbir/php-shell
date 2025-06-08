@@ -11,8 +11,7 @@ while (true) {
 
     $input = fgets(STDIN);
     try {
-        $command = AbstractCommand::make($input);
-        $command->execute();
+        AbstractCommand::make($input)->execute();
     } catch (CommandNotFoundException $e) {
         fwrite(STDOUT, $e->getMessage() . PHP_EOL);
     }

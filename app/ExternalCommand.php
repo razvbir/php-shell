@@ -6,15 +6,14 @@ readonly class ExternalCommand extends AbstractCommand
 {
     public function execute(): void
     {
-        $output = [];
-        $result_code = 1<<8;
+        $pipes = [];
+        $descriptorSpec = [STDIN, $this->out, $this->err];
         $command = escapeshellarg(basename($this->command))
                 . ' '
                 . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), $this->args));
-        $success = exec($command, $output, $result_code);
-        if ($success === false) {
-            exit(1);
-        }
-        fwrite($this->out, implode(PHP_EOL, $output) . PHP_EOL);
+
+        $process = proc_open($command, $descriptorSpec, $pipes);
+        while (proc_get_status($process)['running']);
+        proc_close($process);
     }
 }

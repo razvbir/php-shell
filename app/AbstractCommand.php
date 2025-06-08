@@ -11,6 +11,7 @@ readonly abstract class AbstractCommand
         /** @var array<string> */
         protected array $args = [],
         protected mixed $out = STDOUT,
+        protected mixed $err = STDERR,
     ) {
     }
 
@@ -39,15 +40,32 @@ readonly abstract class AbstractCommand
             throw FileNotFoundException::make();
         }
 
-        $commandArgs = array_slice($args, 0, $redirectStdout !== null ? (int) $redirectStdout : null);
+        $redirectStderr = array_find_key($args, fn (string $a): bool => $a === '2>');
+        $stderrFilename = $args[(int) $redirectStderr + 1] ?? null;
+
+        $err = STDERR;
+        if ($redirectStderr !== null && $stderrFilename !== null) {
+            $err = fopen($stderrFilename, 'w');
+        }
+        if ($err !== STDERR && !is_resource($err)) {
+            throw FileNotFoundException::make();
+        }
+
+        $length = null;
+        if ($redirectStdout !== null) {
+            $length = (int) $redirectStdout;
+        } elseif ($redirectStderr !== null) {
+            $length = (int) $redirectStderr;
+        }
+        $commandArgs = array_slice($args, 0, $length);
 
         return match ($commandType) {
-            CommandType::exit => new ExitCommand(args: $commandArgs, out: $out),
-            CommandType::echo => new EchoCommand(args: $commandArgs, out: $out),
-            CommandType::type => new TypeCommand(args: $commandArgs, out: $out),
-            CommandType::external => new ExternalCommand($commandPath, $commandArgs, $out),
-            CommandType::pwd => new PrintWorkingDirectoryCommand(out: $out),
-            CommandType::cd => new ChangeDirectoryCommand(args: $commandArgs, out: $out),
+            CommandType::exit => new ExitCommand(args: $commandArgs, out: $out, err: $err),
+            CommandType::echo => new EchoCommand(args: $commandArgs, out: $out, err: $err),
+            CommandType::type => new TypeCommand(args: $commandArgs, out: $out, err: $err),
+            CommandType::external => new ExternalCommand($commandPath, $commandArgs, $out, $err),
+            CommandType::pwd => new PrintWorkingDirectoryCommand(out: $out, err: $err),
+            CommandType::cd => new ChangeDirectoryCommand(args: $commandArgs, out: $out, err: $err),
             default => throw CommandNotFoundException::make($commandName),
         };
     }
