@@ -9,11 +9,12 @@ enum CommandType: string
     case type = 'type';
     case pwd = 'pwd';
     case cd = 'cd';
+    case history = 'history';
     case external = 'external';
 
     /** @return array<string> */
     public static function builtIns(): array
     {
-        return [self::exit->value, self::echo->value, self::type->value, self::pwd->value, self::cd->value];
+        return array_map(fn (CommandType $c): string => $c->value, array_slice(self::cases(), 0, -1));
     }
 }
