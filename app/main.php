@@ -19,7 +19,11 @@ function escapeCommand(array $args): string
 function afterLine(?string $input): void
 {
     if (null === $input) {
+        global $historyFile;
         readline_callback_handler_remove();
+        if  ($historyFile !== false) {
+            readline_write_history($historyFile);
+        }
         exit(0);
     }
     if ('' === $input) {
