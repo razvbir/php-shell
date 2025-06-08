@@ -40,12 +40,12 @@ readonly abstract class AbstractCommand
             throw FileNotFoundException::make();
         }
 
-        $redirectStderr = array_find_key($args, fn (string $a): bool => $a === '2>');
+        $redirectStderr = array_find_key($args, fn (string $a): bool => $a === '2>' || $a === '2>>');
         $stderrFilename = $args[(int) $redirectStderr + 1] ?? null;
 
         $err = STDERR;
         if ($redirectStderr !== null && $stderrFilename !== null) {
-            $err = fopen($stderrFilename, 'w');
+            $err = fopen($stderrFilename, str_contains($args[$redirectStderr], '>>') === true ? 'a' : 'w');
         }
         if ($err !== STDERR && !is_resource($err)) {
             throw FileNotFoundException::make();
