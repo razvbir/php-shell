@@ -8,6 +8,14 @@ spl_autoload_register(function (string $class): void {include $class . '.php';})
 
 const PROMPT = '$ ';
 
+/** @param array<string> */
+function escapeCommand(array $args): string
+{
+    return trim(escapeshellarg($args[0])
+        . ' '
+        . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), array_slice($args, 1))));
+}
+
 function afterLine(?string $input): void
 {
     if (null === $input) {
@@ -18,26 +26,48 @@ function afterLine(?string $input): void
     $args = AbstractCommand::extract($input);
     $pipe = array_find_key($args, fn (string $a): bool => $a === '|');
     if ($pipe !== null) {
-        $one = array_slice($args, 0, $pipe);
-        $two = array_slice($args, $pipe + 1);
+        $remainder = $args;
+        $commands = [array_slice($remainder, 0, $pipe)];
+        while (($remainder = array_slice($remainder, $pipe + 1)) !== []) {
+            $pipe = array_find_key($remainder, fn (string $a): bool => $a === '|');
+            if ($pipe === null) {
+                $commands[] = $remainder;
+                break;
+            }
+            $commands[] = array_slice($remainder, 0, $pipe);
+        }
 
-        $commandOne = trim(escapeshellarg($one[0])
-                . ' '
-                . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), array_slice($one, 1))));
+        $processes = [];
+        $pipes = [];
 
-        $commandTwo = trim(escapeshellarg($two[0])
-                . ' '
-                . implode(' ', array_map(fn (string $a): string => escapeshellarg($a), array_slice($two, 1))));
+        $first = array_shift($commands);
+        $firstPipes = [];
+        $prevPipes = &$firstPipes;
+        $processes[] = proc_open(escapeCommand($first), [STDIN, ['pipe', 'w'], STDERR], $firstPipes);
+        foreach (array_slice($commands, 0, -1) as $command) {
+            $commandPipes = [];
+            $processes[] = proc_open(escapeCommand($command), [$prevPipes[1], ['pipe', 'w'], STDERR], $commandPipes);
+            array_push($pipes, ...$prevPipes);
+            $prevPipes = $commandPipes;
+        }
+        $commandPipes = [];
+        $processes[] = proc_open(
+            escapeCommand($commands[count($commands) - 1]),
+            [$prevPipes[1], STDOUT, STDERR],
+            $commandPipes
+        );
+        array_push($pipes, ...$commandPipes);
 
-        $pipesOne = [];
-        $pipesTwo = [];
-        $processOne = proc_open($commandOne, [STDIN, ['pipe', 'w'], ['pipe', 'w']], $pipesOne);
-        $processTwo = proc_open($commandTwo, [$pipesOne[1], STDOUT, STDERR], $pipesTwo);
+        do {
+            $running = array_reduce(
+                $processes,
+                fn (bool $carry, mixed $proc) => $carry || proc_get_status($proc)['running'],
+                false
+            );
+        }while ($running === true);
 
-        while (proc_get_status($processOne)['running'] || proc_get_status($processTwo)['running']);
-
-        proc_close($processOne);
-        proc_close($processTwo);
+        array_walk($processes, fn (mixed $process): int => proc_close($process));
+        array_walk($pipes, fn (mixed $pipe): bool => is_resource($pipe) && fclose($pipe));
 
         readline_add_history($input);
         readline_callback_handler_install(PROMPT, afterLine(...));
